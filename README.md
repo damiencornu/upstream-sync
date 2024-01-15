@@ -98,6 +98,44 @@ Not taken into account;
 
 Explain what would be needed, step by step, to take messages stored in the database into account when grouping messages by threads. You can write your answer in the `README.md` file. What parts of the code would you need to modify?
 
+#### Solution
+
+Having to get threads from Db rather than in memory would need two main changes:
+
+- Creating the thread; in `createThreadsFromEmails` would only create thread for 1st of a new chain otherwise no need for a specific action
+
+- Associating the thread to a message; `createMessageFromEmail` would need to be called sequentially and not in parallel so we always get the thread associated to a message.
+
+  - replacing the `Promise.all()` calling our create message method by a `for of` loop
+  - `createdMessageFromEmail` would not need its second param anymore, it will try to get the thread from Db
+    We would retrive the thread object by its universal id in Db from a method on `ThreadRepository`. We need to join some tables to do so.
+
+    ```ts
+    public async findByEmailUniveralMessageIdentifier(universalMessageId: Contact): Promise<ThreadEntity | null> {
+      const row = await this.database.get<ThreadRow>(
+        "SELECT t.* FROM threads AS t INNER JOIN messages AS m ON t.id = m.thread_id INNER JOIN emails AS e ON m.email_id = e.id WHERE e.universal_message_id = @universalMessageId",
+        {
+          "@universalMessageId": universalMessageId.toString(),
+        }
+      );
+
+      if (!row) {
+        return null;
+      }
+
+      return this.loadEntity(row);
+    }
+    ```
+
+    Same way we retrieve the `user` in `createMessageFromEmail()` we can now also retrieve a thread in the method. Only the thread remains a point of failure if none found at this point.
+
+    ```ts
+    const thread =
+      await this.threadRepository.findByEmailUniveralMessageIdentifier(
+        email.universalMessageId,
+      );
+    ```
+
 ### Task 3: Remove HTML tags from messages
 
 When creating the messages, remove the HTML tags from the message body. Figure out the best place to add this logic and implement it.
