@@ -140,6 +140,10 @@ Having to get threads from Db rather than in memory would need two main changes:
 
 When creating the messages, remove the HTML tags from the message body. Figure out the best place to add this logic and implement it.
 
+#### Solution
+
+Updating the `messageEntity.createMessageFromEmail` so it removes HTML tags.
+
 ### Task 4: Add a unit test
 
 Add a unit test, explain why you chose to test this particular part of the code and more generally what would be the best way to test this project.
