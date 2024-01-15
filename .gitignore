@@ -1,3 +1,4 @@
 db.sqlite
+db-test.sqlite
 node_modules
 yarn-error.log

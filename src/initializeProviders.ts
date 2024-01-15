@@ -11,7 +11,7 @@ import { MessageDisplayService } from "./services/MessageDisplayService";
 
 export async function initializeProviders() {
   const database = await open({
-    filename: "./db.sqlite",
+    filename: process.env.SQLITE_DB || "./db.sqlite",
     driver: sqlite3.Database,
   });
 
@@ -21,8 +21,19 @@ export async function initializeProviders() {
   const messageRepository = new MessageRepository(database);
   const threadRepository = new ThreadRepository(database);
   const userRepository = new UserRepository(database);
-  const emailImportService = new EmailImportService(emailFetcherService, emailRepository, messageRepository, threadRepository, userRepository);
-  const messageDisplayService = new MessageDisplayService(messageRepository, threadRepository, userRepository, emailRepository);
+  const emailImportService = new EmailImportService(
+    emailFetcherService,
+    emailRepository,
+    messageRepository,
+    threadRepository,
+    userRepository,
+  );
+  const messageDisplayService = new MessageDisplayService(
+    messageRepository,
+    threadRepository,
+    userRepository,
+    emailRepository,
+  );
 
   const providers = {
     emailRepository,

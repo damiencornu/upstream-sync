@@ -148,6 +148,18 @@ Updating the `messageEntity.createMessageFromEmail` so it removes HTML tags.
 
 Add a unit test, explain why you chose to test this particular part of the code and more generally what would be the best way to test this project.
 
+#### Solution
+
+I chose to test the threads <> messages association part. In the context of having done the task 1 and wanting to move to the in Db rather than in memory part of task 2 it seems appropriate to have a test to make sure we don't break the app logic when refactoring.
+
+Using `jest` to test the service; made a separate sqlite db, and tests can be launched with `yarn test` after running `yarn` to fetch new packages.
+
+Could have gone with snapshots to make sure we don't break anything either but preferred to check just a couple of cases.
+In a real life testing situations we would test failures paths to make sure the app responds well when not finding a thread.
+
+I don't have a specific answer to how I would test this project but I can feel like the services injections and privates methods would make things very different in testing and make things not reliable in the long run.
+I would unit tests entities methods, integrate testing the services and would mock more.
+
 ## Feedback
 
 Your insights and feedback on the project and the process are invaluable. Please share your thoughts after you have completed the assignment.
