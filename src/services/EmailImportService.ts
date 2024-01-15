@@ -13,13 +13,15 @@ export class EmailImportService {
     private readonly emailRepository: EmailRepository,
     private readonly messageRepository: MessageRepository,
     private readonly threadRepository: ThreadRepository,
-    private readonly userRepository: UserRepository
+    private readonly userRepository: UserRepository,
   ) {}
 
   public async import(): Promise<void> {
     const fetchedEmails = await this.retrieveAndPersistEmails();
-    const defaultThread = await this.createDefaultThread();
-    const messages = await Promise.all(fetchedEmails.map((email) => this.createMessageFromEmail(email, defaultThread)));
+    const threads = await this.createThreadsFromEmails(fetchedEmails);
+    const messages = await Promise.all(
+      fetchedEmails.map((email) => this.createMessageFromEmail(email, threads)),
+    );
     await this.messageRepository.persist(messages);
   }
 
@@ -29,17 +31,50 @@ export class EmailImportService {
     return fetchedEmails;
   }
 
-  private async createDefaultThread() {
-    const singleThread = new ThreadEntity("Default Thread");
+  private async createThreadsFromEmails(emails: Array<EmailEntity>) {
+    const threads = new Map<string, ThreadEntity>();
+
+    for (const email of emails) {
+      // Create thread for 1st email
+      if (!email.inReplyTo) {
+        const thread = await this.createThread(email);
+        threads.set(email.universalMessageId.toString(), thread);
+      }
+      // Retrieve thread if replying to
+      else {
+        const thread = threads.get(email.inReplyTo.toString());
+        threads.set(email.universalMessageId.toString(), thread!);
+      }
+    }
+
+    return threads;
+  }
+
+  private async createThread(email: EmailEntity) {
+    const singleThread = ThreadEntity.createFromEmail(email);
     await this.threadRepository.persist([singleThread]);
     return singleThread;
   }
 
-  private async createMessageFromEmail(email: EmailEntity, thread: ThreadEntity): Promise<MessageEntity> {
+  private async createMessageFromEmail(
+    email: EmailEntity,
+    threads: Map<string, ThreadEntity>,
+  ): Promise<MessageEntity> {
     const user = await this.userRepository.findByEmail(email.from.email);
     const messageSenderId = user?.id ?? null;
 
-    const message = MessageEntity.createFromEmail(messageSenderId, thread.id!, email);
+    const thread = threads.get(email.universalMessageId.toString());
+    if (!thread) {
+      throw new Error(
+        `Could not retrieve thread for ${email.universalMessageId.toString()}`,
+      );
+    }
+
+    const message = MessageEntity.createFromEmail(
+      messageSenderId,
+      thread.id!,
+      email,
+    );
     return message;
   }
 }

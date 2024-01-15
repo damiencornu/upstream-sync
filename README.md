@@ -82,6 +82,18 @@ Concretely, when running `yarn start`, the console should display messages group
 
 Hint: Reply emails appear chronologically after the email to which they are responding. You may avoid complexity by taking this into account.
 
+#### Solution
+
+Replaced the method that created a single thread so it would create as many thread as we have a new chain chain of emeails being created. A new thread being defined by an email that does not reply to (`inReplyTo` not being defined).
+
+The methods returns for every single email its associated thread so we can quickly lookup for the thread we will associate the message. The method creating message from email is in charge of finding its associated thread from the map.
+
+Not taken into account;
+
+- An email arrives and is supposed to be associated to a thread (`inReplyTo` being defined) but we don't have a thread, we miss one email/message.
+
+- Two separate emails that responds to the same email id would for now be pushed too same thread. Like there is a 2nd branch in emails but its treated as same thread here.
+
 ### Task 2: Take messages stored in database into account
 
 Explain what would be needed, step by step, to take messages stored in the database into account when grouping messages by threads. You can write your answer in the `README.md` file. What parts of the code would you need to modify?
